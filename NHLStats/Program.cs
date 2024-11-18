@@ -122,12 +122,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
-using System.Reflection;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 using System.Linq.Dynamic.Core; // LINQ
 
 namespace NHLStats
@@ -146,8 +140,8 @@ namespace NHLStats
         public double PowerPlayGoalsPerGame;                        // P/GP
         public int PowerPlayGoals;                                 // PPG
         public int InPPP;                                         // PPP
-        public int ShorthandedGoals;                             // SHG 
-        public int ShorthandedPoints;                           // SHP
+        public int ShortHandedGoals;                             // SHG 
+        public int ShortHandedPoints;                           // SHP
         public int GameWinningGoals;                           // GWG
         public int OvertimeGoals;                             // OTG
         public int ShotsOnGoal;                              // S
@@ -206,8 +200,8 @@ namespace NHLStats
             double.TryParse(NextValue(line, ref index), out PowerPlayGoalsPerGame);
             int.TryParse(NextValue(line, ref index), out PowerPlayGoals);
             int.TryParse(NextValue(line, ref index), out InPPP);
-            int.TryParse(NextValue(line, ref index), out ShorthandedGoals);
-            int.TryParse(NextValue(line, ref index), out ShorthandedPoints);
+            int.TryParse(NextValue(line, ref index), out ShortHandedGoals);
+            int.TryParse(NextValue(line, ref index), out ShortHandedPoints);
             int.TryParse(NextValue(line, ref index), out GameWinningGoals);
             int.TryParse(NextValue(line, ref index), out OvertimeGoals);
             int.TryParse(NextValue(line, ref index), out ShotsOnGoal);
@@ -238,7 +232,7 @@ namespace NHLStats
         {
             BuildDBFromFile(); // Giovanni
 
-            while (true)
+            while (true) // Patricia
             {
                 Console.WriteLine("\nWelcome to NHL Players !!! ");
                 Console.WriteLine();
@@ -246,7 +240,7 @@ namespace NHLStats
                 Console.WriteLine("0 -  Print all data file");
                 Console.WriteLine("1 -  Filter by Name");
                 Console.WriteLine("2 -  Filter by Team");
-                Console.WriteLine("3 -  Filter by Position");
+                Console.WriteLine("3 -  Filter by Position (POS)");
                 Console.WriteLine("4 -  Filter by Games Played (GP)");
                 Console.WriteLine("5 -  Filter by Goals (G)");
                 Console.WriteLine("6 -  Filter by Assists (A)");
@@ -256,34 +250,54 @@ namespace NHLStats
                 Console.WriteLine("10 - Filter by Power Play Goal Per Game (P/GP)");
                 Console.WriteLine("11 - Filter by Power Play Goals (PPG)");
                 Console.WriteLine("12 - Filter by InPPP (PPP)");
-                Console.WriteLine("13 - Filter by Power Short handed Goals (SHG)");
-                Console.WriteLine("14 - Filter by Short handed Points (SHP)");
+                Console.WriteLine("13 - Filter by Power Short Handed Goals (SHG)");
+                Console.WriteLine("14 - Filter by Short Handed Points (SHP)");
                 Console.WriteLine("15 - Filter by Game Winning Goals (GWG)");
                 Console.WriteLine("16 - Filter by Overtime Goals (OTG)");
                 Console.WriteLine("17 - Filter by Shots On Goal (S)");
                 Console.WriteLine("18 - Filter by Shots Percentage (S%)");
                 Console.WriteLine("19 - Filter by Time On Ice Per Game (TOI/GP)");
-                Console.WriteLine("19 - Filter by Shifts Per Game (Shifts/GP)");
-                Console.WriteLine("20 - Filter by Face Off Won Percentage (FOW%)");
-                Console.WriteLine("21 - Exit");
+                Console.WriteLine("20 - Filter by Shifts Per Game (Shifts/GP)");
+                Console.WriteLine("21 - Filter by Face Off Won Percentage (FOW%)");
+                Console.WriteLine("22 - Exit\n");
 
+                Console.WriteLine("/---------------------------------------------------- DIRECTIONS ------------------------------------------------------/");
+                Console.WriteLine("   1) You are able to include more than one filter after the first one");
+                Console.WriteLine("                 eg: Name >= Justin Abdelkader, Team = DET, GamesPlayed > 20, Goals >= 15 or Assists < 10\n");
+                Console.WriteLine("   2) For filters with more than 1 word, join all words");
+                Console.WriteLine("                 eg: PenaltyInfractionMinutes > 24");
+
+                Console.WriteLine("   3) Type 'RETURN' to go back to main menu");
+                Console.WriteLine("   4) ',' refers to 'and'");
+                Console.WriteLine("   5) Quotes are not needed when filtering by name");
+                Console.WriteLine("/----------------------------------------------------------------------------------------------------------------------/");
+
+                Console.Write("\nType your filter option: ");
                 string option = Console.ReadLine();
+                string filters = string.Empty;
+                Console.WriteLine();
 
                 switch (option)
                 {
                     case "0":
+                        Console.Write("Type ASC to sort by ascending or DESC to sort by descending: ");
+                        string sort = Console.ReadLine();
+                        Console.WriteLine();
+                        sort = sort.ToLower();
                         Console.WriteLine("Displaying all data file! \n");
-                        foreach (var all in Stats.OrderBy(stats => stats.Name))
-                        {
-                            Console.WriteLine($"Name: {all.Name}, Team: {all.Team}, Position: {all.Position}, Games Played: {all.GamesPlayed}, Goals: {all.Goals}, Assists: {all.Assists}, Points: {all.Points}");
-                        }
+                        PrintValuesSorted(Stats, sort);
                         break;
 
                     case "1":
-                        FilterByName(); // Patricia                        
+                        FilterByName(); // inside this method, the method ProcessFilters() also is called
                         break;
 
-                    case "21":
+                    case  "2": case  "3": case  "4": case "5": case  "6": case  "7": case  "8": case  "9": case "10": case "11":
+                    case "12": case "13": case "14": case "15":case "16": case "17": case "18": case "19": case "20": case "21":
+                        ProcessFilters();
+                        break;
+                    
+                    case "22":
                         Console.WriteLine("Exiting the program.");
                         return;
 
@@ -296,166 +310,227 @@ namespace NHLStats
 
 
         /////////////////////////////////////////////  METHODS /////////////////////////////////////////////
-
-        static void FilterByName()
+        static void PrintHeader() // Patricia
         {
-            Console.WriteLine("\nFiltering players by Name ...\n");
+            Console.WriteLine($"{"Name".PadRight(25)}" +
+                                $"{"Team".PadRight(8)}" +
+                                $"{"Pos".PadRight(6)}" +
+                                $"{"GP".PadRight(6)}" +
+                                $"{"G".PadRight(6)}" +
+                                $"{"A".PadRight(6)}" +
+                                $"{"P".PadRight(6)}" +
+                                $"{"+/−".PadRight(6)}" +
+                                $"{"PIM".PadRight(6)}" +
+                                $"{"P/GP".PadRight(8)}" +
+                                $"{"PPG".PadRight(6)}" +
+                                $"{"PPP".PadRight(6)}" +
+                                $"{"SHG".PadRight(6)}" +
+                                $"{"SHP".PadRight(6)}" +
+                                $"{"GWG".PadRight(6)}" +
+                                $"{"OTG".PadRight(6)}" +
+                                $"{"S".PadRight(6)}" +
+                                $"{"S%".PadRight(6)}" +
+                                $"{"TOI/GP".PadRight(8)}" +
+                                $"{"Shifts/GP".PadRight(11)}" +
+                                $"{"FOW%".PadRight(8)}");
+        }
+
+        static void PrintValuesSorted(List<Stats> players, string sort) // Patricia
+        {
+            PrintHeader();
+            var orderedStats = sort == "asc" ? players.OrderBy(stats => stats.Name) : players.OrderByDescending(stats => stats.Name);
+            int count = 0;
+
+            foreach (var all in orderedStats)
+            {
+                string positionText = all.Position == '\0' ? "".PadRight(6) : all.Position.ToString().PadRight(6); // not always the field "P" is filled out
+
+                Console.WriteLine($"{all.Name.Trim().PadRight(25)}" +
+                                    $"{all.Team.Trim().PadRight(8)}" +
+                                    $"{positionText}" +
+                                    $"{all.GamesPlayed.ToString().PadRight(6)}" +
+                                    $"{all.Goals.ToString().PadRight(6)}" +
+                                    $"{all.Assists.ToString().PadRight(6)}" +
+                                    $"{all.Points.ToString().PadRight(6)}" +
+                                    $"{all.PlusMinus.ToString().PadRight(6)}" +
+                                    $"{all.PenaltyInfractionMinutes.ToString().PadRight(6)}" +
+                                    $"{all.PowerPlayGoalsPerGame.ToString("0.0").PadRight(8)}" +
+                                    $"{all.PowerPlayGoals.ToString().PadRight(6)}" +
+                                    $"{all.InPPP.ToString().PadRight(6)}" +
+                                    $"{all.ShortHandedGoals.ToString().PadRight(6)}" +
+                                    $"{all.ShortHandedPoints.ToString().PadRight(6)}" +
+                                    $"{all.GameWinningGoals.ToString().PadRight(6)}" +
+                                    $"{all.OvertimeGoals.ToString().PadRight(6)}" +
+                                    $"{all.ShotsOnGoal.ToString().PadRight(6)}" +
+                                    $"{all.ShotsPercentage.ToString("0.0").PadRight(6)}" +
+                                    $"{all.TimeOnIcePerGame.Trim().PadRight(8)}" +
+                                    $"{all.ShiftsPerGame.ToString("0.0").PadRight(11)}" +
+                                    $"{all.FaceOffWonPercentage.ToString("0.0").PadRight(8)}"
+                                );
+                count += 1;
+            }
+            Console.WriteLine($"\nTotal of records: {count}");
+        } // end of method PrintValuesSorted(List<Stats> players, string sort)
+
+        static void FilterByName() // Patricia
+        {
             Console.WriteLine("\nFilter by:");
-            Console.WriteLine("0 - Initial(s) of name");
             Console.WriteLine("1 - Any part of name");
-            Console.WriteLine("2 - Range of names");
-            Console.WriteLine("3 - Full list of names");
-            Console.WriteLine("4 - Dynamic Searching"); // works similarly to option 2(Range of names, but here is a dynamic searching)
+            Console.WriteLine("2 - Dynamic Searching");
+            Console.WriteLine("3 - Return to Main Menu");
 
             string filterOption = Console.ReadLine();
 
             switch (filterOption)
-            {
-                case "0": // Initial(s) letter of name
-                    Console.WriteLine("\nEnter with initial(s) of name: ");
-                    string initialLetter = Console.ReadLine().ToLower();
-                    var result0 = (from stats in Stats
-                                   where stats.Name.ToLower().StartsWith(initialLetter)
-                                   select stats)
-                                   .OrderBy(stats => stats.Name)
-                                   .ToList();
-                    if (result0.Count > 0)
-                    {
-                        foreach (var player in result0)
-                        {
-                            Console.WriteLine($"Name: {player.Name}, Team: {player.Team}, Position: {player.Position}, Games Played: {player.GamesPlayed}, Goals: {player.Goals}, Assists: {player.Assists}, Points: {player.Points}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("No players found with the specified initial letter.");
-                    }
-                    break;
-
+            {   
                 case "1": // Any part of name 
-                    Console.WriteLine("\nEnter with any part of name: ");
+                    Console.Write("\nEnter with any part of name: ");
                     string subString = Console.ReadLine().ToLower();
+                    Console.Write("Type ASC to sort by ascending or DESC to sort by descending: ");
+                    string sort = Console.ReadLine().ToLower().Trim();
+                    
+                    Console.WriteLine();
+                  
                     var result1 = (from stats in Stats
                                    where stats.Name.ToLower().Contains(subString)
                                    select stats)
-                                   .OrderBy(stats => stats.Name)
                                    .ToList();
+                    
                     if (result1.Count > 0)
                     {
-                        foreach (var player in result1)
-                        {
-                            Console.WriteLine($"Name: {player.Name}, Team: {player.Team}, Position: {player.Position}, Games Played: {player.GamesPlayed}, Goals: {player.Goals}, Assists: {player.Assists}, Points: {player.Points}");
-                        }
+                        PrintValuesSorted(result1, sort);   
                     }
                     else
                     {
-                        Console.WriteLine("No players found with the specified name.");
+                        Console.WriteLine("No players found for this specified name! Try again!");
                     }
                     break;
 
-                case "2": // Range of names
-                    Console.WriteLine("\nEnter the first name of range (inclusive): ");
-                    string startRange = Console.ReadLine().ToLower().Trim();
-
-                    Console.WriteLine("\nEnter the last name of range (inclusive): ");
-                    string endRange = Console.ReadLine().ToLower().Trim();
-
-                    var startExists = Stats.Where(stats => stats.Name.ToLower().Trim().Equals(startRange)).ToList();
-                    var endExists = Stats.Where(stats => stats.Name.ToLower().Trim().Equals(endRange)).ToList();
-
-                    if (!startExists.Any() && !endExists.Any())
-                    {
-                        Console.WriteLine($"Error: Both players with the names '{startRange}' and {endRange}' do not exist.");
-                    }
-                    else if (!startExists.Any())
-                    {
-                        Console.WriteLine($"Error: The player '{startRange}' does not exist.");
-                    }
-                    else if (!endExists.Any())
-                    {
-                        Console.WriteLine($"Error: The player '{endRange}' does not exist.");
-                    }
-                    else
-                    {
-                        var result2 = (from stats in Stats
-                                       where string.Compare(stats.Name.ToLower(), startRange) >= 0 && string.Compare(stats.Name.ToLower(), endRange) <= 0
-                                       select stats)
-                                       .OrderBy(stats => stats.Name)
-                                       .ToList();
-                        if (result2.Count > 0)
-                        {
-                            foreach (var player in result2)
-                            {
-                                Console.WriteLine($"Name: {player.Name}, Team: {player.Team}, Position: {player.Position}, Games Played: {player.GamesPlayed}, Goals: {player.Goals}, Assists: {player.Assists}, Points: {player.Points}");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("No players found within the specified name range.");
-                        }
-                    }
+                case "2": // Dynamic Searching
+                    ProcessFilters();
                     break;
-
-                case "3": // Full list of names
-                    Console.WriteLine("\nFull list of names ordered: ");
-                    var result3 = (from stats in Stats
-                                   select stats)
-                                   .OrderBy(stats => stats.Name)
-                                   .ToList();
-                    if (result3.Count > 0)
-                    {
-                        foreach (var player in result3)
-                        {
-                            Console.WriteLine($"Name: {player.Name}, Team: {player.Team}, Position: {player.Position}, Games Played: {player.GamesPlayed}, Goals: {player.Goals}, Assists: {player.Assists}, Points: {player.Points}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("No name in this file to display!");
-                    }
-                    break;
-
-                case "4":
-                    //   Console.WriteLine("\nEnter the field to filter by (e.g., Name, Team, GamesPlayed, Goals, etc.): ");
-                    //   string field = Console.ReadLine().Trim();
-                    string field = "Name";
-                    //field = field.ToLower();
-
-                    Console.WriteLine($"\nEnter the first value of the range for {field} (inclusive): ");
-                    string startRange1 = Console.ReadLine().Trim();
-
-                    Console.WriteLine($"\nEnter the last value of the range for {field} (inclusive): ");
-                    string endRange1 = Console.ReadLine().Trim();
-
-                    // Dynamic expression 
-                    // string dynamicExpression = $"{field} >= @0 && {field} <= @1";
-                    string dynamicExpression = $"{field}.ToLower().StartsWith(@0.ToLower()) && {field}.ToLower().CompareTo(@1.ToLower()) <= 0";
-
-
-                    var result4 = Stats.AsQueryable()
-                                      .Where(dynamicExpression, startRange1, endRange1)
-                                      .OrderBy(field)
-                                      .ToList();
-
-                    if (result4.Count > 0)
-                    {
-                        foreach (var player in result4)
-                        {
-                            Console.WriteLine($"Name: {player.Name}, Team: {player.Team}, Position: {player.Position}, Games Played: {player.GamesPlayed}, Goals: {player.Goals}, Assists: {player.Assists}, Points: {player.Points}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("No name in this file to display!");
-                    }
-                    break;
-
+                    
+                case "3": // Return to Menu
+                    return;
+               
                 default:
-                    Console.WriteLine("Invalid filter option.");
+                    Console.WriteLine("Invalid option! Try again!");
                     break;
             }
         } // end of method "FilterByName()"
+
+
+        /* All filters and its values will be processed by this method
+         // Query by using LINQ (C#) */
+        static void ProcessFilters() // Patricia
+        {
+            Console.Write("Type filter(s) to search: ");
+            string filters = Console.ReadLine();
+            if (string.Equals(filters, "return", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+            string sort1 = string.Empty;
+
+            // Array of operators to check if data should be sorted
+            string[] comparisonOperators = { "==", ">=", "<=", ">", "<" };
+            foreach (var op in comparisonOperators) // check operators from user
+            {
+                if (filters.Contains(op))
+                {
+                    Console.Write("Type ASC to sort by ascending or DESC to sort by descending: ");
+                    sort1 = Console.ReadLine().ToLower().Trim();
+                    Console.WriteLine();
+                    break;
+                }
+            }
+
+            // Convert user valid screen characters to logical operators
+            filters = filters.Replace(",", "&&")
+                             .Replace(" and ", " && ")
+                             .Replace(" AND ", " && ")
+                             .Replace(" or ", " || ")
+                             .Replace(" OR ", " || ");
+
+            // Replace '=' to '==' if user operator is "=" and is not part of other operators ">=", "<=", ">", "<"
+            if (filters.Contains("="))
+                filters = System.Text.RegularExpressions.Regex.Replace(filters, @"(?<![><!])=(?![><=])", "==");
+
+
+            // Split "filters" in parts based on '||'. If there is no ||, the user filter is added into this variable "orParts"
+            var orParts = filters.Split(new[] { "||" }, StringSplitOptions.RemoveEmptyEntries);
+
+
+            for (int i = 0; i < orParts.Length; i++)
+            {
+                // Split "filters" in parts based on both '&&' and "orParts". If there is no &&, the user filter is added into this variable "andParts"
+                var andParts = orParts[i].Split(new[] { "&&" }, StringSplitOptions.RemoveEmptyEntries);
+                for (int j = 0; j < andParts.Length; j++)
+                {
+                    var part = andParts[j].Trim();
+                    foreach (var op in comparisonOperators)
+                    {
+                        if (part.Contains(op))
+                        {
+                            int operatorIndex = part.IndexOf(op);
+                            string field = part.Substring(0, operatorIndex).Trim();
+                            string value = part.Substring(operatorIndex + op.Length).Trim();
+
+                            // Verify if it's a string
+                            if (!double.TryParse(value, out _))
+                            {
+                                // Check if there are quotes. If not, add it into string value. "\"" - this is a inner default format of C#
+                                if (!value.StartsWith("\"") && !value.EndsWith("\""))
+                                {
+                                    value = $"\"{value}\""; //quotes added
+                                }
+
+                                if (op == "==")
+                                {
+                                    andParts[j] = $"{field}.ToLower().Contains({value}.ToLower())";
+                                }
+                                else // other operators
+                                {
+                                    andParts[j] = $"string.Compare({field}, {value}) {op} 0";
+                                }
+                            }
+                            else
+                            {
+                                // other numeric values, keep original format
+                                andParts[j] = $"{field} {op} {value}";
+                            }
+                            break;
+                        }
+                    }
+                }
+                // add parentheses to string to keep precedence of &&
+                orParts[i] = "(" + string.Join(" && ", andParts) + ")";
+            } // end of for
+
+            filters = string.Join(" || ", orParts); // keep this row regardless has or not this operator
+
+            try
+            {
+               // Run dynamic Query by using LINQ (C#)
+                var query = Stats.AsQueryable().Where(filters);
+                var filteredPlayers = query.ToList();
+
+                if (filteredPlayers.Any())
+                {
+                    PrintValuesSorted(filteredPlayers, sort1);
+                }
+                else
+                {
+                    Console.WriteLine("No player found for this filter! Try again!");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error by applying filters: {ex.Message}");
+            }
+
+        } // end of method ProcessFilters()
     } // end of class Program
-} // end of NHL Stats
+} //  end of NHL Stats
 
 
