@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.IO;
@@ -12,13 +12,11 @@ using System.Xml.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
 
+// OOP Assignment 2 NHL Stats: 
+// Group 1:  Daniel Benjumea Villarraga, Giovanni Evangelista De Barros, Max Dyson, Patrícia Diniz Magalhães
+
 namespace NHLStats
 {
-
-    // OOP Assignment 2 NHL Stats: 
-
-    // Group 1:  Daniel Benjumea Villarraga, Giovanni Evangelista De Barros, Max Dyson, Patrícia Diniz Magalhães
-    
 public class Stats // class which includes all data and positions of file NHL Players
 {
     public string Name;                                                  // Name
@@ -42,8 +40,7 @@ public class Stats // class which includes all data and positions of file NHL Pl
     public string TimeOnIcePerGame;                    // TOI/GP
     public double ShiftsPerGame;                      // Shifts/GP
     public double FaceOffWonPercentage;              // FOW%
-
-
+  
     //This method reads and extracts the next value from a line of text (which contains data separated by commas) based on a position index.
     private string NextValue(string line, ref int index) // index is the position of the line
     {
@@ -63,7 +60,6 @@ public class Stats // class which includes all data and positions of file NHL Pl
             else
             {   // endIndex - stores index of the next comma from current index
                 int endIndex = line.IndexOf(',', index); // try to find the next comma after current index
-
                 // no more commas in the same row
                 if (endIndex == -1) // "-1": no more commas from position, which means the last value of row and there is no commas to separate other values
                     result = line.Substring(index); // get the last value of row (-1)
@@ -71,7 +67,6 @@ public class Stats // class which includes all data and positions of file NHL Pl
                 // if a comma was found, there are more values after current index
                 else //endIndex != -1
                     result = line.Substring(index, endIndex - index); // get a previous value after finding "'"
-
                 index = endIndex + 1;
             }
         }
@@ -112,13 +107,13 @@ internal class Program
     {
         try // Max
         {
-            using (var reader = File.OpenText("NHL Player Stats 2017-18.csv"))
+            using (var reader = File.OpenText("NHL Player Stats 2017-18.csv")) // search file from directory "bin/debug"
             {
                 string input = reader.ReadLine();
                 while ((input = reader.ReadLine()) != null)
                 {
-                    Stats stats = new Stats(input);
-                    Stats.Add(stats);
+                    Stats newStats = new Stats(input);
+                    Stats.Add(newStats);
                 }
             }
         }
@@ -131,46 +126,35 @@ internal class Program
     static void Main(string[] args)
     {
         BuildDBFromFile(); // Giovanni
-
         Console.WriteLine("=====================================================================================================================");
         Console.WriteLine("                                             Welcome to NHL Players !!!                                                 ");
         Console.WriteLine("=====================================================================================================================\n");
 
-
-
         while (true) // Patricia
         {
-
                 try // Max
                 {
-
-
                     Console.WriteLine("---------------------------------------------------- DIRECTIONS ----------------------------------------------------- \n");
                     Console.WriteLine("   1) Here, you can print the entire data file or filter the data dynamically by the following criteria:\n");
                     Console.WriteLine("      Name, Team, Position, Games Played, Goals, Assists, Points, PlusMinus, Penalty Infraction Minutes, ");
                     Console.WriteLine("      Power Play Goal Per Game, Power Play Goals, InPPP, Power Short Handed Goals, Short Handed Points,");
                     Console.WriteLine("      Game Winning Goals, Overtime Goals, Shots On Goal, Shots Percentage, Time On Ice Per Game,");
                     Console.WriteLine("      Shifts Per Game, Face Off Won Percentage \n ");
-
                     Console.WriteLine("   2) You are able to include more than one filter after the first one, as instructed below: ");
                     Console.WriteLine("                 eg: Name >= Justin Abdelkader, Team = DET, GamesPlayed > 20, Goals >= 15 or Assists < 10\n");
-
                     Console.WriteLine("   3) For composed names filters with, join all words");
                     Console.WriteLine("                 eg: PenaltyInfractionMinutes > 24\n");
-
                     Console.WriteLine("   4) Type 'RETURN' to go back to main menu\n");
                     Console.WriteLine("   5) ',' refers to 'and'\n");
                     Console.WriteLine("   6) Double Quotes are not needed when filtering by name\n");
                     Console.WriteLine("----------------------------------------------------------------------------------------------------------------------");
                     Console.WriteLine("\n\n----------------------------------------------------------------------------------------------------------------------");
                     Console.WriteLine("Choose an option to print data, according to the instructions above:\n");
-
                     Console.WriteLine("0 - Print all data file");
                     Console.WriteLine("1 - Filter by part of Name");
                     Console.WriteLine("2 - Dynamic Searching");
                     Console.WriteLine("3 - Exit");
                     Console.WriteLine();
-
                     Console.Write("Type here: ");
                     string option = Console.ReadLine();
                     string filters = string.Empty; // string to hold all filters typed
@@ -192,19 +176,15 @@ internal class Program
                                 Console.WriteLine("Invalid sort option! Try again!\n");
                                 break;
                             }
-
                         case "1":
                             FilterByName(); // inside this method, the method ProcessFilters() also is called
                             break;
-
                         case "2":
                             ProcessFilters();
                             break;
-
                         case "3":
                             Console.WriteLine("Exiting the program");
                             return;
-
                         default:
                             Console.WriteLine("Invalid option! Try again!\n");
                             break;
@@ -215,7 +195,6 @@ internal class Program
            }
         } // end of while
     } // end of Main
-
 
     /////////////////////////////////////////////  METHODS /////////////////////////////////////////////
     public static void PrintHeader() // Patricia
@@ -250,11 +229,9 @@ internal class Program
                 PrintHeader();
                 var orderedStats = sort == "asc" ? players.OrderBy(stats => stats.Name) : players.OrderByDescending(stats => stats.Name);
                 int count = 0;
-
                 foreach (var all in orderedStats)
                 {
                     string positionText = all.Position == '\0' ? "".PadRight(6) : all.Position.ToString().PadRight(6); // not always the field "P" is filled out
-
                     Console.WriteLine($"{all.Name.Trim().PadRight(25)}" +
                                         $"{all.Team.Trim().PadRight(8)}" +
                                         $"{positionText}" +
@@ -280,7 +257,6 @@ internal class Program
                     count += 1;
                 }
                 Console.WriteLine($"\nTotal of records: {count}\n");
-
             }
          catch(Exception ex)
          {
@@ -288,16 +264,13 @@ internal class Program
          }
     } // end of method PrintValuesSorted(List<Stats> players, string sort)
 
-
     public static void FilterByName() // Patricia
     {
             try
             {
                 string sort = string.Empty;
                 Console.Write("\nWrite a part of name to be searched or type 2 to return to Main Menu: ");
-
                 string filterOption = Console.ReadLine();
-
                 if (!string.IsNullOrEmpty(filterOption))
                 {
                     if (filterOption == "2")
@@ -309,12 +282,10 @@ internal class Program
                         Console.Write("\nType ASC to sort by ascending or DESC to sort by descending: ");
                         sort = Console.ReadLine().ToLower().Trim();
                         Console.WriteLine();
-
                         var result1 = (from stats in Stats
                                        where stats.Name.ToLower().Contains(filterOption.ToLower().Trim())
                                        select stats);
                         // .ToList();
-
                         IEnumerable<Stats> sortedList;
                         if (sort == "asc")
                         {
@@ -329,7 +300,6 @@ internal class Program
                             Console.WriteLine("Invalid sort option! Try again!\n");
                             return;
                         }
-
                         var finalList = sortedList.ToList();
                         if (finalList.Count > 0)
                         {
@@ -347,14 +317,10 @@ internal class Program
        }
     } // end of method "FilterByName()"
 
-
-
     /* All filters and its values will be processed by this method
      // Query by using LINQ (C#) */
     public static void ProcessFilters() // Patricia
     {
-                
-      
                 Console.Write("Type filter(s) to search: ");
                 string filters = Console.ReadLine().ToLower().Trim();
                 if (string.Equals(filters, "return", StringComparison.OrdinalIgnoreCase))
@@ -362,7 +328,6 @@ internal class Program
                     return;
                 }
                 string sort1 = string.Empty;
-
                 // Array of operators to check if data should be sorted
                 string[] comparisonOperators = { "==", ">=", "<=", ">", "<" };
                 foreach (var op in comparisonOperators) // check operators from user
@@ -380,23 +345,17 @@ internal class Program
                         break;
                     }
                 }
-
                 // Convert user valid screen characters to logical operators
                 filters = filters.Replace(",", "&&")
                                  .Replace(" and ", " && ")
                                  .Replace(" AND ", " && ")
                                  .Replace(" or ", " || ")
                                  .Replace(" OR ", " || ");
-
                 // Replace '=' to '==' if user operator is "=" and is not part of other operators ">=", "<=", ">", "<"
                 if (filters.Contains("="))
                     filters = System.Text.RegularExpressions.Regex.Replace(filters, @"(?<![><!])=(?![><=])", "==");
-
-
                 // Split "filters" in parts based on '||'. If there is no ||, the user filter is added into this variable "orParts"
                 var orParts = filters.Split(new[] { "||" }, StringSplitOptions.RemoveEmptyEntries);
-
-
                 for (int i = 0; i < orParts.Length; i++)
                 {
                     // Split "filters" in parts based on both '&&' and "orParts". If there is no &&, the user filter is added into this variable "andParts"
@@ -411,7 +370,6 @@ internal class Program
                                 int operatorIndex = part.IndexOf(op);
                                 string field = part.Substring(0, operatorIndex).Trim();
                                 string value = part.Substring(operatorIndex + op.Length).Trim();
-
                                 // Verify if it's a string
                                 if (!double.TryParse(value, out _))
                                 {
@@ -420,7 +378,6 @@ internal class Program
                                     {
                                         value = $"\"{value}\""; //quotes added
                                     }
-
                                     if (op == "==")
                                     {
                                         andParts[j] = $"{field}.ToLower().Contains({value}.ToLower())";
@@ -442,16 +399,12 @@ internal class Program
                     // add parentheses to string to keep precedence of &&
                     orParts[i] = "(" + string.Join(" && ", andParts) + ")";
                 } // end of for
-
                 filters = string.Join(" || ", orParts); // keep this row regardless has or not this operator
-            
-
         try
         {
             // Run dynamic Query by using LINQ (C#)
             var query = Stats.AsQueryable().Where(filters);
             var filteredPlayers = query.ToList();
-
             if (filteredPlayers.Any())
             {
                 PrintValuesSorted(filteredPlayers, sort1);
@@ -465,7 +418,6 @@ internal class Program
         {
             Console.WriteLine($"Error by applying filters: {ex.Message}");
         }
-
     } // end of method ProcessFilters()
   } // end of class Program
-}//  end of NHL Stats
+} //  end of NHL Stats
