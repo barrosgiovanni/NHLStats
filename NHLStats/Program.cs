@@ -13,7 +13,7 @@ using System.Linq.Dynamic.Core;
 using System.Net.Http;
 
 // OOP Assignment 2 NHL Stats: 
-// Group 1:  Daniel Benjumea Villarraga, Giovanni Evangelista De Barros, Max Dyson, Patrícia Diniz Magalhães
+// Group 1:  Daniel Benjumea Villarraga, Giovanni Evangelista De Barros, Max Dyson, Patrícia Magalhães
 
 namespace NHLStats
 {
